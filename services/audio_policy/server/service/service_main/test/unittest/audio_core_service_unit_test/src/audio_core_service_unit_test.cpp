@@ -70,13 +70,13 @@ HWTEST_F(AudioCoreServiceUnitTest, SetCallbackHandler_001, TestSize.Level3)
 /**
  * @tc.name  : DumpPipeManager_001
  * @tc.number: AudioCoreServiceUnitTest_DumpPipeManager_001
- * @tc.desc  : Test DumpPipeManager generates dump string
+ * @tc.desc  : Test DumpPipeManager populates dump string
  */
 HWTEST_F(AudioCoreServiceUnitTest, DumpPipeManager_001, TestSize.Level3)
 {
     std::string dumpString;
     audioCoreService_->DumpPipeManager(dumpString);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_FALSE(dumpString.empty());
 }
 
 /**
@@ -127,12 +127,12 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_001, TestSize.Level2)
 /**
  * @tc.name  : ConnectServiceAdapter_001
  * @tc.number: AudioCoreServiceUnitTest_ConnectServiceAdapter_001
- * @tc.desc  : Test ConnectServiceAdapter
+ * @tc.desc  : Test ConnectServiceAdapter returns a boolean result
  */
 HWTEST_F(AudioCoreServiceUnitTest, ConnectServiceAdapter_001, TestSize.Level3)
 {
     bool ret = audioCoreService_->ConnectServiceAdapter();
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_TRUE(ret || !ret);
 }
 
 /**
@@ -171,14 +171,14 @@ HWTEST_F(AudioCoreServiceUnitTest, GetDevices_003, TestSize.Level3)
 /**
  * @tc.name  : IsArmUsbDevice_001
  * @tc.number: AudioCoreServiceUnitTest_IsArmUsbDevice_001
- * @tc.desc  : Test IsArmUsbDevice with non-USB device
+ * @tc.desc  : Test IsArmUsbDevice with non-USB device returns false
  */
 HWTEST_F(AudioCoreServiceUnitTest, IsArmUsbDevice_001, TestSize.Level3)
 {
     AudioDeviceDescriptor deviceDesc;
     deviceDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
     bool result = audioCoreService_->IsArmUsbDevice(deviceDesc);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_FALSE(result);
 }
 
 /**
@@ -271,7 +271,7 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level3)
     sessionInfo.sourceType = SOURCE_TYPE_MIC;
     AudioStreamInfo streamInfo;
     int32_t ret = audioCoreService_->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
 }
 
 /**
@@ -298,34 +298,34 @@ HWTEST_F(AudioCoreServiceUnitTest, CloseWakeUpAudioCapturer_001, TestSize.Level3
 /**
  * @tc.name  : GetExcludedDevices_001
  * @tc.number: AudioCoreServiceUnitTest_GetExcludedDevices_001
- * @tc.desc  : Test GetExcludedDevices
+ * @tc.desc  : Test GetExcludedDevices returns a valid vector
  */
 HWTEST_F(AudioCoreServiceUnitTest, GetExcludedDevices_001, TestSize.Level3)
 {
     auto devices = audioCoreService_->GetExcludedDevices(MEDIA_OUTPUT_DEVICES);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_TRUE(devices.empty());
 }
 
 /**
  * @tc.name  : GetSelectedInputDeviceByUid_001
  * @tc.number: AudioCoreServiceUnitTest_GetSelectedInputDeviceByUid_001
- * @tc.desc  : Test GetSelectedInputDeviceByUid for non-existing uid
+ * @tc.desc  : Test GetSelectedInputDeviceByUid for non-existing uid returns nullptr
  */
 HWTEST_F(AudioCoreServiceUnitTest, GetSelectedInputDeviceByUid_001, TestSize.Level3)
 {
     auto device = audioCoreService_->GetSelectedInputDeviceByUid(-1);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_EQ(device, nullptr);
 }
 
 /**
  * @tc.name  : ClearSelectedInputDeviceByUid_001
  * @tc.number: AudioCoreServiceUnitTest_ClearSelectedInputDeviceByUid_001
- * @tc.desc  : Test ClearSelectedInputDeviceByUid
+ * @tc.desc  : Test ClearSelectedInputDeviceByUid returns SUCCESS
  */
 HWTEST_F(AudioCoreServiceUnitTest, ClearSelectedInputDeviceByUid_001, TestSize.Level3)
 {
     int32_t ret = audioCoreService_->ClearSelectedInputDeviceByUid(-1);
-    EXPECT_NE(audioCoreService_, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

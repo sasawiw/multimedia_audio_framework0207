@@ -215,12 +215,14 @@ HWTEST_F(AudioEcManagerUnitTest, ClearModuleInfoForMicRef_001, TestSize.Level2)
 /**
  * @tc.name  : GetAudioEcInfo_001
  * @tc.number: AudioEcManagerUnitTest_GetAudioEcInfo_001
- * @tc.desc  : Test GetAudioEcInfo returns current ec info
+ * @tc.desc  : Test GetAudioEcInfo returns current ec info with correct initial values
  */
 HWTEST_F(AudioEcManagerUnitTest, GetAudioEcInfo_001, TestSize.Level2)
 {
+    audioEcManager_->ResetAudioEcInfo();
     AudioEcInfo ecInfo = audioEcManager_->GetAudioEcInfo();
-    EXPECT_NE(audioEcManager_, nullptr);
+    EXPECT_EQ(ecInfo.inputDevice.deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ecInfo.outputDevice.deviceType_, DEVICE_TYPE_NONE);
 }
 
 /**
@@ -421,17 +423,20 @@ HWTEST_F(AudioEcManagerUnitTest, UpdateModuleInfoForPrimary_002, TestSize.Level2
 /**
  * @tc.name  : UpdateAudioEcInfo_001
  * @tc.number: AudioEcManagerUnitTest_UpdateAudioEcInfo_001
- * @tc.desc  : Test UpdateAudioEcInfo when ec feature is disabled
+ * @tc.desc  : Test UpdateAudioEcInfo when ec feature is disabled does not update ec info
  */
 HWTEST_F(AudioEcManagerUnitTest, UpdateAudioEcInfo_001, TestSize.Level3)
 {
     audioEcManager_->isEcFeatureEnable_ = false;
+    audioEcManager_->ResetAudioEcInfo();
     AudioDeviceDescriptor inputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_MIC;
     AudioDeviceDescriptor outputDevice;
     outputDevice.deviceType_ = DEVICE_TYPE_SPEAKER;
     audioEcManager_->UpdateAudioEcInfo(inputDevice, outputDevice);
-    EXPECT_NE(audioEcManager_, nullptr);
+    AudioEcInfo ecInfo = audioEcManager_->GetAudioEcInfo();
+    EXPECT_EQ(ecInfo.inputDevice.deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ecInfo.outputDevice.deviceType_, DEVICE_TYPE_NONE);
 }
 
 /**

@@ -73,19 +73,6 @@ HWTEST_F(AudioCapturerSessionUnitTest, SetConfigParserFlag_001, TestSize.Level2)
 }
 
 /**
- * @tc.name  : GetCapturerState_001
- * @tc.number: AudioCapturerSessionUnitTest_GetCapturerState_001
- * @tc.desc  : Test GetCapturerState with no sessions returns CAPTURER_INVALID
- */
-HWTEST_F(AudioCapturerSessionUnitTest, GetCapturerState_001, TestSize.Level3)
-{
-    audioCapturerSession_->sessionWithNormalSourceType_.clear();
-    audioCapturerSession_->sessionWithSpecialSourceType_.clear();
-    CapturerState state = audioCapturerSession_->GetCapturerState();
-    EXPECT_NE(audioCapturerSession_, nullptr);
-}
-
-/**
  * @tc.name  : SetHearingAidReloadFlag_001
  * @tc.number: AudioCapturerSessionUnitTest_SetHearingAidReloadFlag_001
  * @tc.desc  : Test SetHearingAidReloadFlag sets the flag correctly
@@ -382,7 +369,7 @@ HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_001, TestSize.Leve
 HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_002, TestSize.Level3)
 {
     audioCapturerSession_->isPolicyConfigParsered_ = true;
-    audioCapturerSession_->audioVolumeManager_.SetLoadFlag(true);
+    audioCapturerSession_->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(true);
     uint64_t sessionId = 1001;
     audioCapturerSession_->sessionIdisRemovedSet_.insert(sessionId);
     SessionInfo sessionInfo;
@@ -401,7 +388,7 @@ HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_002, TestSize.Leve
 HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_003, TestSize.Level2)
 {
     audioCapturerSession_->isPolicyConfigParsered_ = true;
-    audioCapturerSession_->audioVolumeManager_.SetLoadFlag(true);
+    audioCapturerSession_->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(true);
     uint64_t sessionId = 2001;
     SessionInfo sessionInfo;
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
@@ -418,7 +405,7 @@ HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_003, TestSize.Leve
 HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_004, TestSize.Level2)
 {
     audioCapturerSession_->isPolicyConfigParsered_ = true;
-    audioCapturerSession_->audioVolumeManager_.SetLoadFlag(true);
+    audioCapturerSession_->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(true);
     audioCapturerSession_->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
     uint64_t sessionId = 3001;
     SessionInfo sessionInfo;
@@ -437,7 +424,7 @@ HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_004, TestSize.Leve
 HWTEST_F(AudioCapturerSessionUnitTest, OnCapturerSessionAdded_005, TestSize.Level3)
 {
     audioCapturerSession_->isPolicyConfigParsered_ = true;
-    audioCapturerSession_->audioVolumeManager_.SetLoadFlag(true);
+    audioCapturerSession_->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(true);
     audioCapturerSession_->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
     uint64_t sessionId = 4001;
     SessionInfo sessionInfo;
@@ -653,12 +640,12 @@ HWTEST_F(AudioCapturerSessionUnitTest, ReloadCaptureSession_005, TestSize.Level3
 /**
  * @tc.name  : CloseWakeUpAudioCapturer_001
  * @tc.number: AudioCapturerSessionUnitTest_CloseWakeUpAudioCapturer_001
- * @tc.desc  : Test CloseWakeUpAudioCapturer
+ * @tc.desc  : Test CloseWakeUpAudioCapturer returns a result
  */
 HWTEST_F(AudioCapturerSessionUnitTest, CloseWakeUpAudioCapturer_001, TestSize.Level2)
 {
     int32_t ret = audioCapturerSession_->CloseWakeUpAudioCapturer();
-    EXPECT_NE(audioCapturerSession_, nullptr);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
 }
 
 } // namespace AudioStandard
