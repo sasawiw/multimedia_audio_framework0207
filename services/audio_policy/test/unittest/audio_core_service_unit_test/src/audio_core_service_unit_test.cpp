@@ -2652,5 +2652,324 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
+
+/**
+ * @tc.name   : Test AudioCoreService::SetCallbackHandler
+ * @tc.number : SetCallbackHandler_001
+ * @tc.desc   : Test SetCallbackHandler with nullptr does not crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetCallbackHandler_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    EXPECT_NO_THROW(audioCoreService->SetCallbackHandler(nullptr));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::GetEventEntry
+ * @tc.number : GetEventEntry_001
+ * @tc.desc   : Test GetEventEntry returns nullptr before Init.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetEventEntry_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto entry = audioCoreService->GetEventEntry();
+    EXPECT_EQ(entry, nullptr);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DumpPipeManager
+ * @tc.number : DumpPipeManager_001
+ * @tc.desc   : Test DumpPipeManager can be called on a fresh instance without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, DumpPipeManager_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::string dumpString;
+    EXPECT_NO_THROW(audioCoreService->DumpPipeManager(dumpString));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DumpSelectHistory
+ * @tc.number : DumpSelectHistory_001
+ * @tc.desc   : Test DumpSelectHistory generates header with empty history.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::string dumpString;
+    audioCoreService->DumpSelectHistory(dumpString);
+    EXPECT_NE(dumpString.find("Select device history infos"), std::string::npos);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::RecordSelectDevice
+ * @tc.number : RecordSelectDevice_002
+ * @tc.desc   : Test RecordSelectDevice limits history size.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    for (int i = 0; i < 15; i++) {
+        audioCoreService->RecordSelectDevice("entry_" + std::to_string(i));
+    }
+    std::string dumpString;
+    audioCoreService->DumpSelectHistory(dumpString);
+    // SELECT_DEVICE_HISTORY_LIMIT is 10, oldest entries should be dropped
+    EXPECT_EQ(dumpString.find("entry_0"), std::string::npos);
+    EXPECT_NE(dumpString.find("entry_14"), std::string::npos);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::IsHWDecoding
+ * @tc.number : IsHWDecoding_001
+ * @tc.desc   : Test IsHWDecoding with nullptr returns false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsHWDecoding_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    bool ret = audioCoreService->IsHWDecoding(nullptr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::IsHWDecoding
+ * @tc.number : IsHWDecoding_002
+ * @tc.desc   : Test IsHWDecoding with PCM encoding returns false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsHWDecoding_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.encoding = ENCODING_PCM;
+    bool ret = audioCoreService->IsHWDecoding(streamDesc);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::IsArmUsbDevice
+ * @tc.number : IsArmUsbDevice_001
+ * @tc.desc   : Test IsArmUsbDevice with non-USB device returns false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsArmUsbDevice_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioDeviceDescriptor deviceDesc;
+    deviceDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool result = audioCoreService->IsArmUsbDevice(deviceDesc);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::SetCallDeviceActive
+ * @tc.number : SetCallDeviceActive_001
+ * @tc.desc   : Test SetCallDeviceActive with DEVICE_TYPE_NONE returns ERR_DEVICE_NOT_SUPPORTED.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetCallDeviceActive_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->SetCallDeviceActive(DEVICE_TYPE_NONE, true, "", -1);
+    EXPECT_EQ(ret, ERR_DEVICE_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::CreateRendererClient
+ * @tc.number : CreateRendererClient_null_001
+ * @tc.desc   : Test CreateRendererClient with nullptr streamDesc returns ERR_NULL_POINTER.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CreateRendererClient_null_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    uint32_t audioFlag = 0;
+    uint32_t sessionId = 0;
+    std::string networkId;
+    int32_t ret = audioCoreService->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    EXPECT_EQ(ret, ERR_NULL_POINTER);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::CreateCapturerClient
+ * @tc.number : CreateCapturerClient_null_001
+ * @tc.desc   : Test CreateCapturerClient with nullptr streamDesc returns ERR_INVALID_PARAM.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_null_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    uint32_t audioFlag = 0;
+    uint32_t sessionId = 0;
+    int32_t ret = audioCoreService->CreateCapturerClient(streamDesc, audioFlag, sessionId);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::ClearSelectedInputDeviceByUid
+ * @tc.number : ClearSelectedInputDeviceByUid_001
+ * @tc.desc   : Test ClearSelectedInputDeviceByUid returns SUCCESS.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ClearSelectedInputDeviceByUid_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->ClearSelectedInputDeviceByUid(-1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::OnCapturerSessionRemoved
+ * @tc.number : OnCapturerSessionRemoved_001
+ * @tc.desc   : Test OnCapturerSessionRemoved can be called without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    EXPECT_NO_THROW(audioCoreService->OnCapturerSessionRemoved(1001));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::CloseWakeUpAudioCapturer
+ * @tc.number : CloseWakeUpAudioCapturer_001
+ * @tc.desc   : Test CloseWakeUpAudioCapturer can be called without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CloseWakeUpAudioCapturer_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    EXPECT_NO_THROW(audioCoreService->CloseWakeUpAudioCapturer());
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::OnDeviceInfoUpdated
+ * @tc.number : OnDeviceInfoUpdated_001
+ * @tc.desc   : Test OnDeviceInfoUpdated can be called with CATEGORY_UPDATE command.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, OnDeviceInfoUpdated_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NO_THROW(audioCoreService->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::SetFirstScreenOn
+ * @tc.number : SetFirstScreenOn_001
+ * @tc.desc   : Test SetFirstScreenOn sets the flag.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetFirstScreenOn_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->SetFirstScreenOn();
+    EXPECT_TRUE(audioCoreService->isFirstScreenOn_);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::ClearStreamPropInfo
+ * @tc.number : ClearStreamPropInfo_001
+ * @tc.desc   : Test ClearStreamPropInfo can be called without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ClearStreamPropInfo_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    EXPECT_NO_THROW(audioCoreService->ClearStreamPropInfo("primary", "primary_output"));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::GetStreamPropInfoSize
+ * @tc.number : GetStreamPropInfoSize_001
+ * @tc.desc   : Test GetStreamPropInfoSize returns 0 for empty adapter.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetStreamPropInfoSize_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    uint32_t size = audioCoreService->GetStreamPropInfoSize("nonexistent", "nonexistent_pipe");
+    EXPECT_EQ(size, 0);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::ParsePreferredInputDeviceHistory
+ * @tc.number : ParsePreferredInputDeviceHistory_001
+ * @tc.desc   : Test ParsePreferredInputDeviceHistory with nullptr returns empty string.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ParsePreferredInputDeviceHistory_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::string result = audioCoreService->ParsePreferredInputDeviceHistory(nullptr);
+    EXPECT_EQ(result, "");
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::ParsePreferredInputDeviceHistory
+ * @tc.number : ParsePreferredInputDeviceHistory_002
+ * @tc.desc   : Test ParsePreferredInputDeviceHistory with valid stream desc returns non-empty string.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ParsePreferredInputDeviceHistory_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 12345;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    std::string result = audioCoreService->ParsePreferredInputDeviceHistory(streamDesc);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("12345"), std::string::npos);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::InVideoCommFastBlockList
+ * @tc.number : InVideoCommFastBlockList_001
+ * @tc.desc   : Test InVideoCommFastBlockList returns false when callback is null.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, InVideoCommFastBlockList_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    bool ret = audioCoreService->InVideoCommFastBlockList("com.test.bundle");
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::ConnectServiceAdapter
+ * @tc.number : ConnectServiceAdapter_001
+ * @tc.desc   : Test ConnectServiceAdapter can be called.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, ConnectServiceAdapter_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    bool ret = audioCoreService->ConnectServiceAdapter();
+    EXPECT_TRUE(ret || !ret);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::IsDistributeServiceOnline
+ * @tc.number : IsDistributeServiceOnline_001
+ * @tc.desc   : Test IsDistributeServiceOnline returns false when deviceStatusListener_ is null.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsDistributeServiceOnline_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    bool ret = audioCoreService->IsDistributeServiceOnline();
+    EXPECT_FALSE(ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

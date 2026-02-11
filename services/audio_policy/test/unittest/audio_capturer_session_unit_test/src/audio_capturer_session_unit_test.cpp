@@ -1553,5 +1553,474 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_069, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_070
+ * @tc.desc  : Test Init and DeInit with A2dpOffloadManager pointer.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_070, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    auto offloadManager = std::make_shared<AudioA2dpOffloadManager>();
+    audioCapturerSession->Init(offloadManager);
+    EXPECT_NE(audioCapturerSession->audioA2dpOffloadManager_, nullptr);
+
+    audioCapturerSession->DeInit();
+    EXPECT_EQ(audioCapturerSession->audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_071
+ * @tc.desc  : Test SetConfigParserFlag sets isPolicyConfigParsered_ to true.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_071, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    EXPECT_FALSE(audioCapturerSession->isPolicyConfigParsered_);
+    audioCapturerSession->SetConfigParserFlag();
+    EXPECT_TRUE(audioCapturerSession->isPolicyConfigParsered_);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_072
+ * @tc.desc  : Test SetHearingAidReloadFlag toggles the flag.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_072, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    int32_t ret = audioCapturerSession->SetHearingAidReloadFlag(true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(audioCapturerSession->hearingAidReloadFlag_);
+
+    ret = audioCapturerSession->SetHearingAidReloadFlag(false);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioCapturerSession->hearingAidReloadFlag_);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_073
+ * @tc.desc  : Test IsIndependentPipe with nullptr returns false.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_073, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    std::shared_ptr<AudioPipeInfo> pipe = nullptr;
+    EXPECT_FALSE(audioCapturerSession->IsIndependentPipe(pipe));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_074
+ * @tc.desc  : Test IsIndependentPipe returns true for VA adapter.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_074, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->adapterName_ = "va";
+    EXPECT_TRUE(audioCapturerSession->IsIndependentPipe(pipe));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_075
+ * @tc.desc  : Test IsIndependentPipe returns false for primary adapter.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_075, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->adapterName_ = "primary";
+    EXPECT_FALSE(audioCapturerSession->IsIndependentPipe(pipe));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_076
+ * @tc.desc  : Test IsValidSessionIdForReload returns false for unknown session.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_076, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    audioCapturerSession->sessionWithNormalSourceType_.clear();
+    EXPECT_FALSE(audioCapturerSession->IsValidSessionIdForReload(12345));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_077
+ * @tc.desc  : Test IsValidSessionIdForReload returns true for valid MIC session.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_077, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint32_t sessionId = 1001;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    EXPECT_TRUE(audioCapturerSession->IsValidSessionIdForReload(sessionId));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_078
+ * @tc.desc  : Test IsValidSessionIdForReload returns false for PLAYBACK_CAPTURE session.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_078, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint32_t sessionId = 1001;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    EXPECT_FALSE(audioCapturerSession->IsValidSessionIdForReload(sessionId));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_079
+ * @tc.desc  : Test IsValidSessionIdForReload returns false for WAKEUP session.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_079, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint32_t sessionId = 1002;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    EXPECT_FALSE(audioCapturerSession->IsValidSessionIdForReload(sessionId));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_080
+ * @tc.desc  : Test OnCapturerSessionAdded when policy config not parsed returns ERROR.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_080, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    audioCapturerSession->isPolicyConfigParsered_ = false;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    AudioStreamInfo streamInfo;
+    int32_t ret = audioCapturerSession->OnCapturerSessionAdded(1001, sessionInfo, streamInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_081
+ * @tc.desc  : Test OnCapturerSessionRemoved for special source type removes from special map.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_081, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint64_t sessionId = 1001;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    audioCapturerSession->sessionWithSpecialSourceType_[sessionId] = sessionInfo;
+    audioCapturerSession->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(audioCapturerSession->sessionWithSpecialSourceType_.count(sessionId), 0);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_082
+ * @tc.desc  : Test OnCapturerSessionRemoved for normal source with remaining sessions.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_082, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint64_t sessionId1 = 1001;
+    uint64_t sessionId2 = 1002;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId1] = sessionInfo;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId2] = sessionInfo;
+    audioCapturerSession->OnCapturerSessionRemoved(sessionId1);
+    EXPECT_EQ(audioCapturerSession->sessionWithNormalSourceType_.count(sessionId1), 0);
+    EXPECT_EQ(audioCapturerSession->sessionWithNormalSourceType_.count(sessionId2), 1);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_083
+ * @tc.desc  : Test OnCapturerSessionRemoved for unknown session adds to removed set.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_083, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint64_t sessionId = 9999;
+    audioCapturerSession->sessionWithNormalSourceType_.clear();
+    audioCapturerSession->sessionWithSpecialSourceType_.clear();
+    audioCapturerSession->sessionWithInputPipeRouteFlag_.clear();
+    audioCapturerSession->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(audioCapturerSession->sessionIdisRemovedSet_.count(sessionId), 1);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_084
+ * @tc.desc  : Test SetInputDeviceTypeForReload and GetInputDeviceTypeForReload.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_084, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioDeviceDescriptor inputDevice;
+    inputDevice.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    audioCapturerSession->SetInputDeviceTypeForReload(inputDevice);
+    const AudioDeviceDescriptor &result = audioCapturerSession->GetInputDeviceTypeForReload();
+    EXPECT_EQ(result.deviceType_, DEVICE_TYPE_USB_HEADSET);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_085
+ * @tc.desc  : Test GetEnhancePropByName returns matching property value.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_085, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioEnhancePropertyArray propertyArray;
+    AudioEnhanceProperty prop1;
+    prop1.enhanceClass = "record";
+    prop1.enhanceProp = "NRON";
+    propertyArray.property.push_back(prop1);
+    AudioEnhanceProperty prop2;
+    prop2.enhanceClass = "voip_up";
+    prop2.enhanceProp = "PNR";
+    propertyArray.property.push_back(prop2);
+
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByName(propertyArray, "record"), "NRON");
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByName(propertyArray, "voip_up"), "PNR");
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByName(propertyArray, "unknown"), "");
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_086
+ * @tc.desc  : Test GetEnhancePropByNameV3 returns matching property value.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_086, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 prop1;
+    prop1.name = "record";
+    prop1.category = "NRON";
+    propertyArray.property.push_back(prop1);
+    AudioEffectPropertyV3 prop2;
+    prop2.name = "voip_up";
+    prop2.category = "PNR";
+    propertyArray.property.push_back(prop2);
+
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByNameV3(propertyArray, "record"), "NRON");
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByNameV3(propertyArray, "voip_up"), "PNR");
+    EXPECT_EQ(audioCapturerSession->GetEnhancePropByNameV3(propertyArray, "unknown"), "");
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_087
+ * @tc.desc  : Test FindRemainingNormalSession returns true immediately when findRunningSessionRet is true.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_087, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint32_t targetSessionId = 0;
+    bool result = audioCapturerSession->FindRemainingNormalSession(1001, true, 1002, targetSessionId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(targetSessionId, 1002);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_088
+ * @tc.desc  : Test FindRemainingNormalSession returns false when no remaining sessions.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_088, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    audioCapturerSession->sessionWithNormalSourceType_.clear();
+    uint32_t targetSessionId = 0;
+    bool result = audioCapturerSession->FindRemainingNormalSession(1001, false, 0, targetSessionId);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_089
+ * @tc.desc  : Test ReloadCaptureSession returns SUCCESS when hearingAidReloadFlag_ is true.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_089, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    audioCapturerSession->hearingAidReloadFlag_ = true;
+    uint32_t sessionId = 1001;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    EXPECT_EQ(audioCapturerSession->ReloadCaptureSession(sessionId, SESSION_OPERATION_START), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_090
+ * @tc.desc  : Test ConstructWakeupAudioModuleInfo returns false when adapter info flag not set.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_090, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    audioCapturerSession->audioConfigManager_.isAdapterInfoMap_ = false;
+    AudioStreamInfo streamInfo;
+    AudioModuleInfo audioModuleInfo;
+    EXPECT_FALSE(audioCapturerSession->ConstructWakeupAudioModuleInfo(streamInfo, audioModuleInfo));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_091
+ * @tc.desc  : Test FillWakeupStreamPropInfo with nullptr pipe returns false.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_091, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioStreamInfo streamInfo;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
+    AudioModuleInfo audioModuleInfo;
+    EXPECT_FALSE(audioCapturerSession->FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_092
+ * @tc.desc  : Test FillWakeupStreamPropInfo with empty stream prop infos returns false.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_092, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioStreamInfo streamInfo;
+    auto pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->streamPropInfos_.clear();
+    AudioModuleInfo audioModuleInfo;
+    EXPECT_FALSE(audioCapturerSession->FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_093
+ * @tc.desc  : Test ReloadSourceForDeviceChange with ec feature disabled does nothing.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_093, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioDeviceDescriptor inputDevice;
+    AudioDeviceDescriptor outputDevice;
+    std::string caller = "test";
+    audioCapturerSession->audioEcManager_.isEcFeatureEnable_ = false;
+    EXPECT_NO_THROW(audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller));
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_094
+ * @tc.desc  : Test CloseWakeUpAudioCapturer can be called without crash.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_094, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    int32_t ret = audioCapturerSession->CloseWakeUpAudioCapturer();
+    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_095
+ * @tc.desc  : Test OnCapturerSessionRemoved for last normal session closes normal source.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_095, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint64_t sessionId = 1001;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
+    audioCapturerSession->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(audioCapturerSession->sessionWithNormalSourceType_.count(sessionId), 0);
+    EXPECT_EQ(audioCapturerSession->audioEcManager_.GetSourceOpened(), SOURCE_TYPE_INVALID);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_096
+ * @tc.desc  : Test IsSourceTypeValidForEc for additional invalid types.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_096, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    EXPECT_FALSE(audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_CAMCORDER));
+    EXPECT_FALSE(audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_VOICE_CALL));
+    EXPECT_FALSE(audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_PLAYBACK_CAPTURE));
+    EXPECT_FALSE(audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_WAKEUP));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
